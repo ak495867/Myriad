@@ -24,7 +24,9 @@ class CompressionReport:
         return 1 - self.compressed_bytes / self.original_bytes
 
 
-def distillation_loss(student: np.ndarray, teacher: np.ndarray, temperature: float = 2.0) -> float:
+def distillation_loss(
+    student: np.ndarray, teacher: np.ndarray, temperature: float = 2.0
+) -> float:
     if temperature <= 0:
         raise ValueError("temperature must be positive")
     if student.shape != teacher.shape:
@@ -38,12 +40,15 @@ def distillation_loss(student: np.ndarray, teacher: np.ndarray, temperature: flo
     student_prob /= np.sum(student_prob, axis=-1, keepdims=True)
     teacher_prob /= np.sum(teacher_prob, axis=-1, keepdims=True)
     divergence = teacher_prob * (
-        np.log(np.maximum(teacher_prob, 1e-12)) - np.log(np.maximum(student_prob, 1e-12))
+        np.log(np.maximum(teacher_prob, 1e-12))
+        - np.log(np.maximum(student_prob, 1e-12))
     )
     return float(np.mean(np.sum(divergence, axis=-1)) * temperature * temperature)
 
 
-def compress_tensors(tensors: list[Tensor], config: CompressionConfig) -> CompressionReport:
+def compress_tensors(
+    tensors: list[Tensor], config: CompressionConfig
+) -> CompressionReport:
     rng = np.random.default_rng(config.seed)
     compressed: list[Tensor] = []
     snr_values: list[float] = []
@@ -51,17 +56,23 @@ def compress_tensors(tensors: list[Tensor], config: CompressionConfig) -> Compre
     total_values = 0
     original_bytes = sum(item.numel * DataType.FP32.bits // 8 for item in tensors)
     for tensor in tensors:
-        current = Tensor(name=tensor.name, data=tensor.data.astype(np.float32), dtype=DataType.FP32)
+        current = Tensor(
+            name=tensor.name, data=tensor.data.astype(np.float32), dtype=DataType.FP32
+        )
         if config.global_sparsity > 0:
             if config.block_shape is not None and current.data.ndim == 2:
-                pruned = block_prune(current, config.global_sparsity, config.block_shape)
+                pruned = block_prune(
+                    current, config.global_sparsity, config.block_shape
+                )
             else:
                 pruned = magnitude_prune(current, config.global_sparsity)
             current = pruned.tensor
             removed_values += pruned.removed_values
             total_values += current.numel
         if config.target_dtype is not DataType.FP32:
-            quantized = quantize_model([current], config.target_dtype, config.percentile)[0]
+            quantized = quantize_model(
+                [current], config.target_dtype, config.percentile
+            )[0]
             current = quantized.tensor
             snr_values.append(quantized.snr_db)
         compressed.append(current)

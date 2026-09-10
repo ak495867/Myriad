@@ -7,7 +7,9 @@ from myriad.compiler.scheduler import memory_plan, schedule_layers, topological_
 from myriad.models import CompileArtifact, DataType
 
 
-def compile_graph(graph: Graph, bytes_per_element: int = 1, parallelism: int = 4) -> CompileArtifact:
+def compile_graph(
+    graph: Graph, bytes_per_element: int = 1, parallelism: int = 4
+) -> CompileArtifact:
     graph.validate()
     plan = memory_plan(graph, bytes_per_element=bytes_per_element)
     schedules = schedule_layers(graph, parallelism=parallelism)

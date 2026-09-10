@@ -1,6 +1,14 @@
-from myriad.compression.pipeline import CompressionReport, compress_tensors, distillation_loss
+from myriad.compression.pipeline import (
+    CompressionReport,
+    compress_tensors,
+    distillation_loss,
+)
 from myriad.compression.pruning import block_prune, magnitude_prune
-from myriad.compression.quantization import dequantize_tensor, quantize_model, quantize_tensor
+from myriad.compression.quantization import (
+    dequantize_tensor,
+    quantize_model,
+    quantize_tensor,
+)
 
 __all__ = [
     "CompressionReport",

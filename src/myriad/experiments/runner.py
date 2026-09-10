@@ -63,7 +63,11 @@ def graph_from_layers(name: str, layers: list[LayerSpec]) -> Graph:
     for layer in layers:
         for input_name in layer.input_names:
             if input_name not in graph.values:
-                shape = (layer.shape[0], layer.weight_shape[1]) if layer.weight_shape else layer.shape
+                shape = (
+                    (layer.shape[0], layer.weight_shape[1])
+                    if layer.weight_shape
+                    else layer.shape
+                )
                 graph.add_input(input_name, shape)
         graph.add_layer(layer)
     return graph

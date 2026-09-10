@@ -1,4 +1,9 @@
-from myriad.analysis import classify_layer, estimate_design, roofline_points, silicon_cost
+from myriad.analysis import (
+    classify_layer,
+    estimate_design,
+    roofline_points,
+    silicon_cost,
+)
 from myriad.compiler import Graph, compile_graph, lower_dense_layer, memory_plan
 from myriad.hardware import edge_npu
 
@@ -27,7 +32,9 @@ def test_memory_plan_reuses_dead_values():
 
 def test_hardware_estimate_is_positive():
     graph = build_graph()
-    estimate = estimate_design(graph.layers, edge_npu(), parameter_bytes=1, activation_bytes=1)
+    estimate = estimate_design(
+        graph.layers, edge_npu(), parameter_bytes=1, activation_bytes=1
+    )
     assert estimate.total_latency_us > 0
     assert estimate.total_energy_uj > 0
     assert estimate.total_area_um2 > 0
@@ -43,4 +50,7 @@ def test_roofline_and_cost_results_are_finite():
     assert len(points) == 2
     assert all(point["bound"] in {"compute_bound", "memory_bound"} for point in points)
     assert cost["estimated_cost_per_die_usd"] > 0
-    assert classify_layer(graph.layers[0], hardware) in {"compute_bound", "memory_bound"}
+    assert classify_layer(graph.layers[0], hardware) in {
+        "compute_bound",
+        "memory_bound",
+    }

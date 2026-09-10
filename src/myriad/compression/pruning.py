@@ -14,10 +14,14 @@ def magnitude_prune(tensor: Tensor, sparsity: float) -> PruningResult:
     _validate_sparsity(sparsity)
     values = tensor.data.astype(np.float32, copy=True)
     if values.size == 0 or sparsity == 0:
-        return PruningResult(tensor=tensor, achieved_sparsity=0.0, threshold=0.0, removed_values=0)
+        return PruningResult(
+            tensor=tensor, achieved_sparsity=0.0, threshold=0.0, removed_values=0
+        )
     count = int(np.floor(values.size * sparsity))
     if count == 0:
-        return PruningResult(tensor=tensor, achieved_sparsity=0.0, threshold=0.0, removed_values=0)
+        return PruningResult(
+            tensor=tensor, achieved_sparsity=0.0, threshold=0.0, removed_values=0
+        )
     magnitudes = np.abs(values).reshape(-1)
     threshold = float(np.partition(magnitudes, count - 1)[count - 1])
     mask = np.abs(values) <= threshold
@@ -42,7 +46,9 @@ def magnitude_prune(tensor: Tensor, sparsity: float) -> PruningResult:
     )
 
 
-def block_prune(tensor: Tensor, sparsity: float, block_shape: tuple[int, int]) -> PruningResult:
+def block_prune(
+    tensor: Tensor, sparsity: float, block_shape: tuple[int, int]
+) -> PruningResult:
     _validate_sparsity(sparsity)
     if len(block_shape) != 2 or min(block_shape) <= 0:
         raise ValueError("block_shape must contain two positive dimensions")
@@ -55,11 +61,15 @@ def block_prune(tensor: Tensor, sparsity: float, block_shape: tuple[int, int]) -
     padded_cols = int(np.ceil(cols / block_cols) * block_cols)
     padded = np.zeros((padded_rows, padded_cols), dtype=np.float32)
     padded[:rows, :cols] = values
-    blocks = padded.reshape(padded_rows // block_rows, block_rows, padded_cols // block_cols, block_cols)
+    blocks = padded.reshape(
+        padded_rows // block_rows, block_rows, padded_cols // block_cols, block_cols
+    )
     scores = np.mean(np.abs(blocks), axis=(1, 3))
     count = int(np.floor(scores.size * sparsity))
     if count == 0:
-        return PruningResult(tensor=tensor, achieved_sparsity=0.0, threshold=0.0, removed_values=0)
+        return PruningResult(
+            tensor=tensor, achieved_sparsity=0.0, threshold=0.0, removed_values=0
+        )
     threshold = float(np.partition(scores.reshape(-1), count - 1)[count - 1])
     block_mask = scores <= threshold
     if int(np.sum(block_mask)) > count:

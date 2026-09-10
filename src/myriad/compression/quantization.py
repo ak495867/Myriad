@@ -7,7 +7,9 @@ from myriad.models import DataType, QuantizationResult, Tensor
 
 def _validate_dtype(dtype: DataType) -> None:
     if dtype not in {DataType.INT8, DataType.INT4, DataType.INT2, DataType.BINARY}:
-        raise ValueError(f"quantization requires an integer dtype, received {dtype.value}")
+        raise ValueError(
+            f"quantization requires an integer dtype, received {dtype.value}"
+        )
 
 
 def _bounds(dtype: DataType) -> tuple[int, int]:
@@ -42,12 +44,19 @@ def quantize_tensor(
         span = max(maximum - minimum, np.finfo(np.float32).eps)
         scale = span / (upper - lower)
         zero_point = int(np.clip(np.rint(lower - minimum / scale), lower, upper))
-        quantized = np.clip(np.rint(values / scale + zero_point), lower, upper).astype(np.int8)
+        quantized = np.clip(np.rint(values / scale + zero_point), lower, upper).astype(
+            np.int8
+        )
     dequantized = (quantized.astype(np.float32) - zero_point) * scale
     error = values - dequantized
     mse = float(np.mean(error * error))
     signal = float(np.mean(values * values))
-    snr_db = float(10 * np.log10(max(signal, np.finfo(np.float32).eps) / max(mse, np.finfo(np.float32).eps)))
+    snr_db = float(
+        10
+        * np.log10(
+            max(signal, np.finfo(np.float32).eps) / max(mse, np.finfo(np.float32).eps)
+        )
+    )
     result_tensor = Tensor(
         name=tensor.name,
         data=quantized,
@@ -72,5 +81,7 @@ def dequantize_tensor(tensor: Tensor) -> np.ndarray:
     return (tensor.data.astype(np.float32) - tensor.zero_point) * tensor.scale
 
 
-def quantize_model(tensors: list[Tensor], dtype: DataType, percentile: float = 99.9) -> list[QuantizationResult]:
+def quantize_model(
+    tensors: list[Tensor], dtype: DataType, percentile: float = 99.9
+) -> list[QuantizationResult]:
     return [quantize_tensor(item, dtype, percentile=percentile) for item in tensors]

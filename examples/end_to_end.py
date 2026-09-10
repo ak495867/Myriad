@@ -20,14 +20,22 @@ def main() -> None:
     ]
     compression = compress_tensors(
         tensors,
-        CompressionConfig(target_dtype=DataType.INT4, global_sparsity=0.5, block_shape=(4, 4)),
+        CompressionConfig(
+            target_dtype=DataType.INT4, global_sparsity=0.5, block_shape=(4, 4)
+        ),
     )
     graph = Graph("myriad_example")
     graph.add_input("features", (1, 128))
     graph.add_layer(lower_dense_layer("encoder", "features", "encoded", 1, 128, 256))
     graph.add_layer(lower_dense_layer("projection", "encoded", "output", 1, 256, 128))
     hardware = edge_npu()
-    design = estimate_design(graph.layers, hardware, parameter_bytes=1, activation_bytes=1, model_bytes=compression.compressed_bytes)
+    design = estimate_design(
+        graph.layers,
+        hardware,
+        parameter_bytes=1,
+        activation_bytes=1,
+        model_bytes=compression.compressed_bytes,
+    )
     artifact = compile_graph(graph, bytes_per_element=1, parallelism=2)
     payload = {
         "compression": {
@@ -53,7 +61,9 @@ def main() -> None:
     }
     output = Path("artifacts/end_to_end.json")
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    output.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     print(output)
 
 

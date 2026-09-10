@@ -27,21 +27,30 @@ class Graph:
     layers: list[LayerSpec] = field(default_factory=list)
     values: dict[str, Value] = field(default_factory=dict)
 
-    def add_input(self, name: str, shape: tuple[int, ...], dtype: DataType = DataType.FP32) -> Value:
+    def add_input(
+        self, name: str, shape: tuple[int, ...], dtype: DataType = DataType.FP32
+    ) -> Value:
         if name in self.values:
             raise ValueError(f"value already exists: {name}")
         value = Value(name=name, shape=shape, dtype=dtype)
         self.values[name] = value
         return value
 
-    def add_layer(self, layer: LayerSpec, output_dtype: DataType = DataType.FP32) -> Value:
+    def add_layer(
+        self, layer: LayerSpec, output_dtype: DataType = DataType.FP32
+    ) -> Value:
         if layer.output_name in self.values:
             raise ValueError(f"output already exists: {layer.output_name}")
         missing = [name for name in layer.input_names if name not in self.values]
         if missing:
             raise ValueError(f"layer {layer.name} has missing inputs: {missing}")
         self.layers.append(layer)
-        value = Value(name=layer.output_name, shape=layer.shape, dtype=output_dtype, producer=layer.name)
+        value = Value(
+            name=layer.output_name,
+            shape=layer.shape,
+            dtype=output_dtype,
+            producer=layer.name,
+        )
         self.values[layer.output_name] = value
         return value
 
@@ -52,7 +61,9 @@ class Graph:
                 known.add(value.name)
         for layer in self.layers:
             if not set(layer.input_names).issubset(known):
-                raise ValueError(f"graph is not topologically ordered at layer {layer.name}")
+                raise ValueError(
+                    f"graph is not topologically ordered at layer {layer.name}"
+                )
             if layer.output_name in known:
                 raise ValueError(f"duplicate graph output: {layer.output_name}")
             known.add(layer.output_name)
@@ -81,7 +92,14 @@ class Graph:
         }
 
 
-def lower_dense_layer(name: str, input_name: str, output_name: str, batch: int, input_features: int, output_features: int) -> LayerSpec:
+def lower_dense_layer(
+    name: str,
+    input_name: str,
+    output_name: str,
+    batch: int,
+    input_features: int,
+    output_features: int,
+) -> LayerSpec:
     return LayerSpec(
         name=name,
         op="dense",
@@ -90,11 +108,23 @@ def lower_dense_layer(name: str, input_name: str, output_name: str, batch: int, 
         shape=(batch, output_features),
         weight_shape=(output_features, input_features),
         macs=batch * input_features * output_features,
-        attributes={"input_features": input_features, "output_features": output_features},
+        attributes={
+            "input_features": input_features,
+            "output_features": output_features,
+        },
     )
 
 
-def lower_matmul_layer(name: str, left: str, right: str, output_name: str, batch: int, rows: int, inner: int, cols: int) -> LayerSpec:
+def lower_matmul_layer(
+    name: str,
+    left: str,
+    right: str,
+    output_name: str,
+    batch: int,
+    rows: int,
+    inner: int,
+    cols: int,
+) -> LayerSpec:
     return LayerSpec(
         name=name,
         op="matmul",

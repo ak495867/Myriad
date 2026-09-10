@@ -5,13 +5,22 @@ import math
 from myriad.models import DesignEstimate, HardwareSpec, LayerEstimate, LayerSpec
 
 
-def estimate_layer(layer: LayerSpec, hardware: HardwareSpec, parameter_bytes: int = 1, activation_bytes: int = 1) -> LayerEstimate:
+def estimate_layer(
+    layer: LayerSpec,
+    hardware: HardwareSpec,
+    parameter_bytes: int = 1,
+    activation_bytes: int = 1,
+) -> LayerEstimate:
     if parameter_bytes <= 0 or activation_bytes <= 0:
         raise ValueError("byte sizes must be positive")
     activation_elements = math.prod(layer.shape)
     weight_elements = math.prod(layer.weight_shape) if layer.weight_shape else 0
-    sram_bytes = activation_elements * activation_bytes + weight_elements * parameter_bytes
-    dram_bytes = weight_elements * parameter_bytes + activation_elements * activation_bytes
+    sram_bytes = (
+        activation_elements * activation_bytes + weight_elements * parameter_bytes
+    )
+    dram_bytes = (
+        weight_elements * parameter_bytes + activation_elements * activation_bytes
+    )
     compute_seconds = layer.macs / hardware.peak_macs_per_second if layer.macs else 0.0
     memory_seconds = dram_bytes / hardware.dram_bandwidth_bytes_per_second
     latency_seconds = max(compute_seconds, memory_seconds)
@@ -42,7 +51,12 @@ def estimate_design(
     model_bytes: int | None = None,
 ) -> DesignEstimate:
     estimates = tuple(
-        estimate_layer(layer, hardware, parameter_bytes=parameter_bytes, activation_bytes=activation_bytes)
+        estimate_layer(
+            layer,
+            hardware,
+            parameter_bytes=parameter_bytes,
+            activation_bytes=activation_bytes,
+        )
         for layer in layers
     )
     peak_memory = max((item.sram_bytes for item in estimates), default=0)
@@ -53,8 +67,15 @@ def estimate_design(
         total_energy_uj=sum(item.energy_uj for item in estimates),
         total_area_um2=max((item.area_um2 for item in estimates), default=0.0),
         peak_memory_bytes=peak_memory,
-        model_bytes=model_bytes if model_bytes is not None else sum(item.dram_bytes for item in estimates),
-        metadata={"parameter_bytes": parameter_bytes, "activation_bytes": activation_bytes},
+        model_bytes=(
+            model_bytes
+            if model_bytes is not None
+            else sum(item.dram_bytes for item in estimates)
+        ),
+        metadata={
+            "parameter_bytes": parameter_bytes,
+            "activation_bytes": activation_bytes,
+        },
     )
 
 

@@ -40,6 +40,8 @@ def test_distillation_loss_is_zero_for_equal_logits():
 
 def test_compression_reduces_storage():
     tensor = Tensor("weights", np.ones((64, 64), dtype=np.float32))
-    report = compress_tensors([tensor], CompressionConfig(target_dtype=DataType.INT4, global_sparsity=0.5))
+    report = compress_tensors(
+        [tensor], CompressionConfig(target_dtype=DataType.INT4, global_sparsity=0.5)
+    )
     assert report.compressed_bytes < report.original_bytes
     assert report.achieved_sparsity == 0.5
